@@ -197,7 +197,7 @@ class ConvNet(nn.Module):
         self.atom_size = atom_size
 
         # conv layer (input at least 1 x 1 x 40 x 40)
-        self.conv1 = nn.Conv2d(in_dim[2], 16, kernel_size=4, stride=2)
+        self.conv1 = nn.Conv2d(in_dim[2], 16, kernel_size=8, stride=4)
         self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=4, stride=2)
         self.bn2 = nn.BatchNorm2d(32)
@@ -209,8 +209,8 @@ class ConvNet(nn.Module):
         def conv2d_size_out(size, kernel_size=8, stride=4):
             return (size - (kernel_size - 1) - 1) // stride + 1
 
-        conv_w = conv2d_size_out(conv2d_size_out(conv2d_size_out(in_dim[1], 4, 2), 4, 2), 3, 1)
-        conv_h = conv2d_size_out(conv2d_size_out(conv2d_size_out(in_dim[0], 4, 2), 4, 2), 3, 1)
+        conv_w = conv2d_size_out(conv2d_size_out(conv2d_size_out(in_dim[1], 8, 4), 4, 2), 3, 1)
+        conv_h = conv2d_size_out(conv2d_size_out(conv2d_size_out(in_dim[0], 8, 4), 4, 2), 3, 1)
         self.hidden_size = conv_w * conv_h * 32
 
         # set advantage layer

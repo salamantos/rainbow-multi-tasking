@@ -139,8 +139,7 @@ class DenseNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward method implementation, return one Q-value for each action."""
         dist = self.dist(x)
-        q = torch.sum(dist * self.support, dim=2)
-        return q
+        return torch.sum(dist * self.support, dim=2)
 
     def dist(self, x: torch.Tensor) -> torch.Tensor:
         """Get distribution for atoms, one distribution for each action."""
@@ -233,8 +232,7 @@ class ConvNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward method implementation, return one Q-value for each action."""
         dist = self.dist(x)
-        q = torch.sum(dist * self.support, dim=2)
-        return q
+        return torch.sum(dist * self.support, dim=2)
 
     def dist(self, x: torch.Tensor) -> torch.Tensor:
         """Get distribution for atoms, one distribution for each action."""

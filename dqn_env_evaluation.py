@@ -49,20 +49,13 @@ batch_size = 32  # batch size
 target_update = 1000  # update target network frequency
 frame_interval = 1000  # refresh plot frequency
 plot = True  # plot score and loss during training
-model_name = env_name[env_idx] + "_" + str(num_frames)  # model name, don't need to change it
+model_name = f"{env_name[env_idx]}_{num_frames}"
 training_delay = num_frames // 50  # number of frames before start training
 trials = 100  # number of evaluation episodes
 frames_stack = 1  # number of consecutive frames to take as input
 train = True  # train a new model
 test = True  # evaluate the new model if train==True,
-             # otherwise try to load an old model that has been trained for num_frames frames
-             # and if present use it to perform evaluation
-# ---------------------------------------------------------------
-
-preprocess_function = None
-if env_idx == 1:
-    preprocess_function = preprocess_obs_pacman
-
+preprocess_function = preprocess_obs_pacman if env_idx == 1 else None
 env = wrap_env(gym.make(env_name[env_idx]))
 
 agent = DQNAgent(env, memory_size, batch_size, target_update,
@@ -88,7 +81,7 @@ if test:
     agent.load()
     tot_score = 0
     frames = []
-    for i in range(trials):
+    for _ in range(trials):
         score, frames = agent.test(get_frames=True)
         tot_score += score
         print("Score: ", score)
@@ -102,6 +95,6 @@ if test:
 
     if not os.path.exists("videos"):
         os.makedirs("videos")
-    save_path = os.path.join("videos", model_name + ".mp4")
+    save_path = os.path.join("videos", f"{model_name}.mp4")
     save_animation(best_frames, save_path, 20)
     print("Video saved at", save_path)

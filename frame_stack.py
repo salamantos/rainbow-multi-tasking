@@ -18,7 +18,7 @@ class FrameStack:
         assert self.w is not None and self.curr_frames > 0
         if self.mode == "array":
             self.frames = self.frames[self.w:]
-        if self.mode == "pixels":
+        elif self.mode == "pixels":
             self.frames = self.frames[self.h:]
         self.curr_frames -= 1
 
@@ -63,9 +63,7 @@ class FrameStack:
 
 if __name__ == '__main__':
     m = FrameStack(4, mode="pixels")
-    f = []
-    for i in range(10):
-        f.append(np.random.uniform(size=[12, 10, 3]))
+    f = [np.random.uniform(size=[12, 10, 3]) for _ in range(10)]
     m.stack(f[0])
     print(len(m))
     m.stack(f[1], 8)

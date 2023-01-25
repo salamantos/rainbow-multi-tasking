@@ -101,7 +101,7 @@ class DQNAgent:
         if n_frames_stack > 1:  # if the input consists of more than 1 frame, compute its total dimension
             obs_shape = list(obs_shape)
             obs_shape[0] *= n_frames_stack
-        assert len(obs_shape) == 3 or len(obs_shape) == 1
+        assert len(obs_shape) in {3, 1}
         if len(obs_shape) == 1:  # observation is an array
             print("Using DenseNet")
             self.obs_dim = [obs_shape[0]]
@@ -174,7 +174,7 @@ class DQNAgent:
         self.optimizer = optim.Adam(self.dqn.parameters(), lr=self.lr)
 
         # current transition to store in memory
-        self.transition = list()
+        self.transition = []
 
         # training delay
         self.training_delay = training_delay
@@ -188,7 +188,7 @@ class DQNAgent:
 
         # save / load
         self.model_dir = model_path
-        self.model_path = os.path.join(model_path, model_name + ".tar")
+        self.model_path = os.path.join(model_path, f"{model_name}.tar")
 
         # observation preprocess function (convert to grayscale, crop, resize...)
         self.frame_preprocess = frame_preprocess
@@ -251,13 +251,11 @@ class DQNAgent:
         if self.n_frames_stack > 1:
             next_state = self.get_n_frames(next_state)
 
-        if self.max_reward is not None:
-            if reward > self.max_reward:
-                reward = self.max_reward
+        if self.max_reward is not None and reward > self.max_reward:
+            reward = self.max_reward
 
-        if self.min_reward is not None:
-            if reward < self.min_reward:
-                reward = self.min_reward
+        if self.min_reward is not None and reward < self.min_reward:
+            reward = self.min_reward
 
         if not self.is_test:
             self.transition += [reward, next_state, done]
@@ -345,7 +343,7 @@ class DQNAgent:
 
             if frame_idx % self.frame_interval == 0:
                 if len(scores) == 0:
-                    if len(frame_scores) > 0:
+                    if frame_scores:
                         # if no episodes have been completed in the current interval
                         # then take the last score
                         frame_scores.append(float(frame_scores[-1]))
@@ -405,10 +403,7 @@ class DQNAgent:
             return score, frames
         if not get_frames and get_actions:
             return score, actions
-        if get_frames and get_actions:
-            return score, frames, actions
-
-        return score
+        return (score, frames, actions) if get_frames else score
 
     def _compute_dqn_loss(self, samples: Dict[str, np.ndarray], gamma: float) -> torch.Tensor:
         """Return the loss."""
@@ -450,7 +445,7 @@ class DQNAgent:
 
             dist = self.dqn.dist(state)
             log_p = torch.log(dist[range(self.batch_size), action])
-            loss = -(proj_dist * log_p).sum(1)
+            return -(proj_dist * log_p).sum(1)
 
         else:
             # Compute normal value estimation loss
@@ -465,9 +460,7 @@ class DQNAgent:
             target = (reward + self.gamma * next_q_value * mask).to(self.device)
 
             # calculate dqn loss
-            loss = F.smooth_l1_loss(curr_q_value, target, reduction="none")
-
-        return loss
+            return F.smooth_l1_loss(curr_q_value, target, reduction="none")
 
     def _target_hard_update(self):
         """Hard update: target <- local."""
@@ -502,10 +495,10 @@ class DQNAgent:
         """Return the last n frames"""
         if self.frame_stack.full():
             self.frame_stack.stack(frame, 1)
-            return self.frame_stack.frames
         else:
             self.frame_stack.stack(frame, self.n_frames_stack)
-            return self.frame_stack.frames
+
+        return self.frame_stack.frames
 
     def save(self):
         if not os.path.exists(self.model_dir):
@@ -514,13 +507,13 @@ class DQNAgent:
         torch.save({
             'model': self.dqn.state_dict(),
         }, os.path.join(self.model_path))
-        print("Model saved in: " + str(self.model_path))
+        print(f"Model saved in: {str(self.model_path)}")
 
     def load(self):
         print("Restoring saved model...")
         checkpoint = torch.load(self.model_path)
         self.dqn.load_state_dict(checkpoint['model'])
-        print("Model restored from: " + str(self.model_path))
+        print(f"Model restored from: {str(self.model_path)}")
 
     def _plot(self, frame_idx: int, scores: List[float], losses: List[float]):
         """Plot the training progresses."""
@@ -530,7 +523,7 @@ class DQNAgent:
         plt.title('Frame %s. Mean Score: %.4s' % (frame_idx,
                                                   np.mean(scores[-10:])))
         plt.plot(scores)
-        plt.xlabel("Frames x " + str(self.frame_interval))
+        plt.xlabel(f"Frames x {str(self.frame_interval)}")
         plt.ylabel("Score")
         plt.subplot(132)
         plt.title('Loss')
